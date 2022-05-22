@@ -1,0 +1,120 @@
+﻿@model TesteSalut.Models.NotaFiscal;
+<!doctype html>
+<html lang="en">
+   <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Teste Salut</title>
+      <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+   </head>
+   <body>
+    <div class="container text-bg-dark p-3">
+       <div class="">
+       <h1>Cadastro de Notas Fiscais</h1>
+       </div>
+      @using (Html.BeginForm("AdicionarAsync", "NotaFiscal", FormMethod.Post)){
+       
+         <div class="row g-3">
+         <div class="col-md-3">
+            @Html.LabelFor(x => x.CNPJ, new { @class="form-label"})
+            @Html.TextBoxFor(x => x.CNPJ , new {@class="form-control" ,  @id = "cnpj" })
+            <span hidden></span>
+         </div>
+         <div class="col-md-3">
+            @Html.LabelFor(x => x.CanalDeCompra, new { @class="form-label"})
+            @Html.TextBoxFor(x => x.CanalDeCompra , new {@class="form-control" ,  @id = "canalCompra" })
+         </div>
+         <div class="col-md-3">
+            @Html.LabelFor(x => x.DataDaCompra, new { @class="form-label"})
+            @Html.TextBoxFor(x => x.DataDaCompra , new {@class="form-control" ,  @id = "data" })
+         </div>
+         <div class="col-md-3">
+            @Html.LabelFor(x => x.NumeroCupomFiscal, new { @class="form-label"})
+            @Html.TextBoxFor(x => x.NumeroCupomFiscal , new {@class="form-control" ,  @id = "numeroCupom" })
+         </div>
+        
+          <div class="col-md-3">
+          <label class="form-label">Adicionar Produto</label>
+          @Html.DropDownList("produtos",@ViewBag.produtos as SelectList, new { @class="form-control", @id="produto"})
+       </div>
+                
+       <div class="col-md-3">
+          <label class="form-label">Quantidade do Produto</label>
+          <input type="number" id="qtdProduto" class="form-control">
+       </div>
+       <div class ="col-md-3">
+       <input type="submit" id="addProduto" class="btn btn-primary mt-4" value="Adicionar Produto">
+                 </div>
+
+         <div class="col-md-6">
+            
+            <table class="table table-light">
+              <thead>
+                <tr>
+                  <th scope="col">Produto</th>
+                  <th scope="col">Quantidade</th>
+                </tr>
+              </thead>
+              <tbody>
+               @*   @{
+                      if(Model.Produtos.Equals(null)){
+                          <p>Adicione produtos para a sua nota. </p>
+                          <p>Mínimo de 6 Produtos por nota. </p>
+                      }
+                  }*@
+              </tbody>
+            </table>
+            
+         <div class="col-md-4">
+            @Html.LabelFor(x => x.ValorTotal, new { @class="form-label"})
+            @Html.TextBoxFor(x => x.ValorTotal , new {@class="form-control" ,  @id = "valorTotal" })
+         </div>
+         </div>
+         <div class="col-md-2">
+            @Html.LabelFor(x => x.UploadCupomFiscal, new{@class="form-label"})
+            <input type="file" id="cupom" onchange="validaExtensao()">
+         </div>         
+         <button type="submit" class="btn btn-large btn-block btn-primary">Cadastrar Cupom</button>
+      </div>
+      }
+      </div>
+   </body>
+</html>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script>
+
+    $('#addProduto').click(function () {
+        var model = $("#produto").val();       
+        var quantidade = $("#qtdProduto").val();
+        var produto = new{ model, quantidade}
+        $.ajax({
+          type: "POST",
+          contentType: "application/json; charset=utf-8",
+          url: "@Url.Action("AdicionarProdutoNaNota","NotaFiscal")",
+          data: { produto:produto },
+          success: function (result) {
+               console.log('Its working');
+          }
+        });
+    })
+
+
+    function validaExtensao() {
+       
+       var result = true;
+       var extensoes = new Array('pdf', 'jpg','png','jpeg'); // Arquivos permitidos
+       var ext = document.getElementById('cupom').val().split(".")[1].toLowerCase();
+       if ($.inArray(ext, extensoes) === -1) { // Arquivo não permitido
+          result = false; 
+       }
+       return result;
+    }
+
+
+    </script>
+                                   
+
+
