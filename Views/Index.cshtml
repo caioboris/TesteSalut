@@ -1,4 +1,4 @@
-﻿@model TesteSalut.Models.NotaFiscal;
+﻿@model TesteSalut.ViewModels.ProdutoNotaViewModel;
 <!doctype html>
 <html lang="en">
    <head>
@@ -16,26 +16,27 @@
        
          <div class="row g-3">
          <div class="col-md-3">
-            @Html.LabelFor(x => x.CNPJ, new { @class="form-label"})
-            @Html.TextBoxFor(x => x.CNPJ , new {@class="form-control" ,  @id = "cnpj" })
-            <span hidden></span>
+            @Html.LabelFor(x => x.NotaFiscal.CNPJ, new { @class="form-label"})
+            @Html.TextBoxFor(x => x.NotaFiscal.CNPJ , new {@class="form-control" ,  @id = "cnpj" })
+            <span hidden class="text-danger" id="spanCnpj">Cnpj Inválido</span>
          </div>
          <div class="col-md-3">
-            @Html.LabelFor(x => x.CanalDeCompra, new { @class="form-label"})
-            @Html.TextBoxFor(x => x.CanalDeCompra , new {@class="form-control" ,  @id = "canalCompra" })
+            @Html.LabelFor(x => x.NotaFiscal.CanalDeCompra, new { @class="form-label"})
+            @Html.TextBoxFor(x => x.NotaFiscal.CanalDeCompra , new {@class="form-control" ,  @id = "canalCompra" })
          </div>
          <div class="col-md-3">
-            @Html.LabelFor(x => x.DataDaCompra, new { @class="form-label"})
-            @Html.TextBoxFor(x => x.DataDaCompra , new {@class="form-control" ,  @id = "data" })
+            @Html.LabelFor(x => x.NotaFiscal.DataDaCompra, new { @class="form-label"})
+            @Html.TextBoxFor(x => x.NotaFiscal.DataDaCompra , new {@class="form-control" ,  @id = "data" })
+            <span hidden class="text-danger" id="spanData">A data deve ser entre 01/05/2022 e 15/06/2022</span>
          </div>
          <div class="col-md-3">
-            @Html.LabelFor(x => x.NumeroCupomFiscal, new { @class="form-label"})
-            @Html.TextBoxFor(x => x.NumeroCupomFiscal , new {@class="form-control" ,  @id = "numeroCupom" })
+            @Html.LabelFor(x => x.NotaFiscal.NumeroCupomFiscal, new { @class="form-label"})
+            @Html.TextBoxFor(x => x.NotaFiscal.NumeroCupomFiscal , new {@class="form-control" ,  @id = "numeroCupom" })
          </div>
         
           <div class="col-md-3">
           <label class="form-label">Adicionar Produto</label>
-          @Html.DropDownList("produtos",@ViewBag.produtos as SelectList, new { @class="form-control", @id="produto"})
+          @Html.DropDownList("produtos",@ViewBag.produtos as SelectList,new { @class="form-control", @id="produto"})
        </div>
                 
        <div class="col-md-3">
@@ -43,36 +44,50 @@
           <input type="number" id="qtdProduto" class="form-control">
        </div>
        <div class ="col-md-3">
-       <input type="submit" id="addProduto" class="btn btn-primary mt-4" value="Adicionar Produto">
+       <input type="button" id="addProduto" class="btn btn-primary mt-4" value="Adicionar Produto">
                  </div>
 
          <div class="col-md-6">
+                
+        <table class="table table-light">
+         <thead>
+           <tr>
+             <th scope="col">Produto</th>
+             <th scope="col">Quantidade</th>
+           </tr>
+         </thead>
+         <tbody>
+           @{
+               if(Model.Produtos == null){
+                   <tr>Adicione Produtos a nota</tr>
+               }
+               else{
+              
+               foreach(var item in Model.Produtos)
+               {
+                   <tr>
+                   <td>@item.Produto.Nome</td>
+                   </tr>
+                    <tr>
+                   <td>@item.Quantidade</td>
+                   </tr>
+               }
+               }
+            }
+         </tbody>
+        </table>
+                
             
-            <table class="table table-light">
-              <thead>
-                <tr>
-                  <th scope="col">Produto</th>
-                  <th scope="col">Quantidade</th>
-                </tr>
-              </thead>
-              <tbody>
-               @*   @{
-                      if(Model.Produtos.Equals(null)){
-                          <p>Adicione produtos para a sua nota. </p>
-                          <p>Mínimo de 6 Produtos por nota. </p>
-                      }
-                  }*@
-              </tbody>
-            </table>
             
          <div class="col-md-4">
-            @Html.LabelFor(x => x.ValorTotal, new { @class="form-label"})
-            @Html.TextBoxFor(x => x.ValorTotal , new {@class="form-control" ,  @id = "valorTotal" })
+            @Html.LabelFor(x => x.NotaFiscal.ValorTotal, new { @class="form-label"})
+            @Html.TextBoxFor(x => x.NotaFiscal.ValorTotal , new {@class="form-control" ,  @id = "valorTotal" })
          </div>
          </div>
          <div class="col-md-2">
-            @Html.LabelFor(x => x.UploadCupomFiscal, new{@class="form-label"})
+            <label class="form-label">Upload Cupom Fiscal</label>
             <input type="file" id="cupom" onchange="validaExtensao()">
+            <span hidden class="text-danger" id="spanUpload">Só são suportados arquivos PDF e de Imagem (JPG, PNG)</span>
          </div>         
          <button type="submit" class="btn btn-large btn-block btn-primary">Cadastrar Cupom</button>
       </div>
@@ -85,21 +100,77 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     <script>
+    
+    //Requisiçoes
 
-    $('#addProduto').click(function () {
-        var model = $("#produto").val();       
+    $('#addProduto').click(function (e) {
+        e.preventDefault();
+        var produto = $("#produto").val();       
         var quantidade = $("#qtdProduto").val();
-        var produto = new{ model, quantidade}
         $.ajax({
           type: "POST",
-          contentType: "application/json; charset=utf-8",
           url: "@Url.Action("AdicionarProdutoNaNota","NotaFiscal")",
-          data: { produto:produto },
+          data: { produto:produto , quantidade: quantidade},
           success: function (result) {
                console.log('Its working');
           }
         });
-    })
+    });
+
+    $(document).ready(function(){
+        if(validaCampos()){
+
+            var model = @Html.Raw(Json.Serialize(Model));
+
+            $.ajax({
+                type: "POST",
+                url: "@Url.Action("AdicionarAsync","NotaFiscal")",
+                data:{model : model},
+                success: function (result){
+                    console.log('Its Working');
+                }
+            });
+        }
+    });
+
+    //Validações
+
+    function hideFields(){
+        $('#spanCnpj').hide();
+        $('#spanData').hide();
+        $('#spanUpload').hide();
+
+    }
+
+    function validaCampos(){
+
+        if(!validarCNPJ($('#spanCnpj'))){
+            hideFields();
+            $('#spanCnpj').show();
+            return false;
+        }
+
+        data = new Date($('#data').val());
+        
+        if(!validaDataEmPeriodo(data)){
+            hideFields();
+            $('#spanData').show();
+            return false;
+        }
+
+        qtdTotal = ViewBag.qtdTotal;
+
+        if(qtd < 6){
+            hideFields();
+            $('#spanQtd').show();
+            return false
+        }
+
+        hideFields();
+        return true;
+       
+    }
+
 
 
     function validaExtensao() {
@@ -112,6 +183,70 @@
        }
        return result;
     }
+
+    function validaDataEmPeriodo(data){
+        var dataInicio = new Date(2022, 05, 1);
+        var dataFim = new Date(2022, 06, 15);     
+        if (dataInicio < data && data < dataFim) {
+           return true; 
+        }
+     return false;
+    }
+
+
+
+    function validarCNPJ(cnpj) {
+ 
+    if(cnpj == '') return false;
+     
+    if (cnpj.length != 14)
+        return false;
+ 
+    // Elimina CNPJs invalidos conhecidos
+    if (cnpj == "00000000000000" || 
+        cnpj == "11111111111111" || 
+        cnpj == "22222222222222" || 
+        cnpj == "33333333333333" || 
+        cnpj == "44444444444444" || 
+        cnpj == "55555555555555" || 
+        cnpj == "66666666666666" || 
+        cnpj == "77777777777777" || 
+        cnpj == "88888888888888" || 
+        cnpj == "99999999999999")
+        return false;
+         
+    // Valida DVs
+    tamanho = cnpj.length - 2
+    numeros = cnpj.substring(0,tamanho);
+    digitos = cnpj.substring(tamanho);
+    soma = 0;
+    pos = tamanho - 7;
+    for (i = tamanho; i >= 1; i--) {
+      soma += numeros.charAt(tamanho - i) * pos--;
+      if (pos < 2)
+            pos = 9;
+    }
+    resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+    if (resultado != digitos.charAt(0))
+        return false;
+         
+    tamanho = tamanho + 1;
+    numeros = cnpj.substring(0,tamanho);
+    soma = 0;
+    pos = tamanho - 7;
+    for (i = tamanho; i >= 1; i--) {
+      soma += numeros.charAt(tamanho - i) * pos--;
+      if (pos < 2)
+            pos = 9;
+    }
+    resultado = soma % 11 < 2 ? 0 : 11 - soma % 11;
+    if (resultado != digitos.charAt(1))
+          return false;
+           
+    return true;
+    
+  }
+
 
 
     </script>

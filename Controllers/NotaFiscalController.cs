@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TesteSalut.Data;
 using TesteSalut.Models;
+using TesteSalut.ViewModels;
 
 namespace TesteSalut.Controllers
 {
@@ -18,7 +19,7 @@ namespace TesteSalut.Controllers
 
         List<SelectListItem> produtos = new List<SelectListItem>();
 
-        List<ProdutoNotaFiscal> produtosNaNota = new List<ProdutoNotaFiscal>();
+         List<ProdutoNotaFiscal> produtosNaNota = new List<ProdutoNotaFiscal>();
 
 
         public NotaFiscalController(IConfiguration config, AppDbContext context)
@@ -33,14 +34,15 @@ namespace TesteSalut.Controllers
 
             using (SqlConnection sql = new SqlConnection(connection))
             {
+                int i = 0;
                 sql.Open();
                 SqlDataReader reader = null;
                 SqlCommand sqlCommand = new SqlCommand("SELECT NOME FROM PRODUTO ", sql);
                 reader = sqlCommand.ExecuteReader();
                 while (reader.Read())
                 {
-                    int i = 0;
-                    produtos.Add(new SelectListItem { Text = reader["NOME"].ToString(), Value = i.ToString() });
+                    
+                    produtos.Add(new SelectListItem { Text = reader["NOME"].ToString(), Value = reader["NOME"].ToString() });
                     i++;
                 }
 
@@ -49,14 +51,22 @@ namespace TesteSalut.Controllers
                 return new SelectList(produtos, "Value", "Text");
         }
 
+        [Route("tabelaProdutos")]
+        public PartialViewResult TabelaProdutos()
+        {
+            return PartialView("Views/TabelaProdutos.cshtml");
+        }
+
         public IActionResult Index()
         {
 
-            NotaFiscal nota = new NotaFiscal();
+            ProdutoNotaViewModel produtoNotaViewModel = new ProdutoNotaViewModel(); 
             ViewBag.produtos = GetOptions().ToArray();
 
-            return View("Views/Index.cshtml",nota);
+            return View("Views/Index.cshtml", produtoNotaViewModel);
         }
+
+
 
         [HttpGet]
         [Route("listar")]
@@ -69,20 +79,38 @@ namespace TesteSalut.Controllers
             return Ok(notasFiscais);
         }
 
-        [HttpPut]
-        [Route("adicionarProdutoNaNota")]
-        public IActionResult AdicionarProdutoNaNota([FromBody] ProdutoNotaFiscal produto)
-        {            
 
-            if (!ModelState.IsValid)            
+
+        [HttpPost]
+        [Route("adicionarProdutoNaNota")]
+        public async Task<IActionResult> AdicionarProdutoNaNota([FromServices] AppDbContext context, [FromForm] string produto, [FromForm] int quantidade)
+        {
+
+            if (!ModelState.IsValid)
                 return BadRequest();
 
-            produtosNaNota.Add(produto);
+            var produtoInserido = await context.Produto
+                .FirstOrDefaultAsync(p => p.Nome.Equals(produto));
 
-            ViewBag.produtosNota = produtosNaNota.ToList();
+            ProdutoNotaFiscal produtoAdicionado = new ProdutoNotaFiscal
+            {
+                Produto = produtoInserido,
+                Quantidade = quantidade
+            };
 
-            return Created("/adicionarProdutoNaNota", produto);
+            produtosNaNota.Add(produtoAdicionado);
 
+            ViewBag.QtdProdutos = produtosNaNota.Count();
+
+            return Ok(produtosNaNota);
+
+        }
+
+        [HttpGet]
+        [Route("listarProdutosNaNota")]
+        public JsonResult ListarProdutosNaNota()
+        {
+            return Json(produtosNaNota);
         }
 
         [HttpPost]
@@ -101,9 +129,8 @@ namespace TesteSalut.Controllers
                 CanalDeCompra = model.CanalDeCompra,
                 DataDaCompra = model.DataDaCompra,
                 NumeroCupomFiscal = model.NumeroCupomFiscal,
-                ProdutosNaNota = model.ProdutosNaNota,
+                ProdutosNaNota = produtosNaNota,
                 QtdProdutos = model.QtdProdutos,
-                UploadCupomFiscal = model.UploadCupomFiscal
             };
 
             try
@@ -116,6 +143,11 @@ namespace TesteSalut.Controllers
             {
 
                 return BadRequest(e.Message);
+            }
+
+            foreach(var item in produtosNaNota)
+            {
+                produtosNaNota.Remove(item);
             }
 
         }
@@ -147,48 +179,6 @@ namespace TesteSalut.Controllers
                 return BadRequest(e.Message);
             }
         }
-
-
-        [HttpPost]
-        [Route("uploadCupom")]
-        public async Task<IActionResult> UploadCupom(IList<IFormFile> cupomFiscal)
-        {
-            IFormFile cupomCarregado = cupomFiscal.FirstOrDefault();
-
-            if (cupomCarregado != null)
-            {
-                MemoryStream ms = new MemoryStream();
-                cupomCarregado.OpenReadStream().CopyTo(ms);
-
-                if(cupomCarregado.ContentType.Equals("application/pdf") || cupomCarregado.ContentType.Equals("image/png") || cupomCarregado.ContentType.Equals("image/jpg"))
-                {
-                    CupomFiscal cupom = new CupomFiscal()
-                    {
-                        Descricao = cupomCarregado.FileName,
-                        Dados = ms.ToArray(),
-                        ContentType = cupomCarregado.ContentType
-                    };
-
-                    _context.CupomFiscal.Add(cupom);
-                    await _context.SaveChangesAsync();
-
-
-                }
-                else
-                {
-                    throw new Exception("Formato de Arquivo não suportado!");
-                }
-            }
-            return RedirectToAction("Index");
-        }
-
-        [Route("cupom/visualizar")]
-        public IActionResult Visualizar(int id)
-        {
-            var cupomSalvo = _context.CupomFiscal.FirstOrDefault(c => c.Id == id);
-
-            return File(cupomSalvo.Dados, cupomSalvo.ContentType);
-        } 
 
 
     }

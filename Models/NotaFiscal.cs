@@ -4,7 +4,7 @@ namespace TesteSalut.Models
 {
     public class NotaFiscal
     {
-        public Guid Id = new Guid();
+        public Guid Id { get;set; }
 
         [Required]
         public string CNPJ { get; set; }
@@ -24,14 +24,11 @@ namespace TesteSalut.Models
 
         [Required]
         [MinLength(5)]
-        public List<ProdutoNotaFiscal> ProdutosNaNota { get; set; }
+        public List<ProdutoNotaFiscal>? ProdutosNaNota { get; set; }
 
         [Required]
         [Display(Name = "Quantidade")]
         public int QtdProdutos { get; set; }
-
-        [Display(Name = "Upload Cupom Fiscal")]
-        public CupomFiscal UploadCupomFiscal { get; set; }
 
         [Display(Name = "Valor Total dos Produtos")]
         public double ValorTotal { get; set; }

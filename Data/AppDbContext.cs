@@ -11,8 +11,6 @@ namespace TesteSalut.Data
 
         public DbSet<NotaFiscal> NotaFiscal { get; set; }
 
-        public DbSet<CupomFiscal> CupomFiscal { get; set; }
-
         protected override void OnConfiguring(
             DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer("Server=DESKTOP-8OK7LBP\\SQLEXPRESS;Database=TesteSalutDB;Trusted_Connection=True;MultipleActiveResultSets=true");
